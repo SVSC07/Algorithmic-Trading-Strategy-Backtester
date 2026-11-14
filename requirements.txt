@@ -1,0 +1,9 @@
+alembic
+bcrypt
+fastapi
+pandas
+pyjwt
+pytest
+python-multipart
+sqlalchemy
+uvicorn
