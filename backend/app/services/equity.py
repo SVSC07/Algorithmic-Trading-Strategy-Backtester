@@ -1,83 +1,68 @@
-from datetime import date
-import pandas as pd
-from app.domain import TradeRecord, EquityPoint
+# STUB — owned by Shaurya, replaced on merge
+"""
+services/equity.py
+build_equity_curve stub — real implementation owned by Shaurya.
+"""
+import math
+from datetime import date, timedelta
+from typing import List
 
-def _to_date(val) -> date:
-    if hasattr(val, "date") and callable(val.date):
-        return val.date()
-    if isinstance(val, date):
-        return val
-    return pd.to_datetime(val).date()
+import pandas as pd
+
+from app.domain import EquityPoint, TradeRecord
+
 
 def build_equity_curve(
     price_data: pd.DataFrame,
-    trades: list[TradeRecord],
-    initial_capital: float = 100000.0,
-) -> list[EquityPoint]:
+    trades: List[TradeRecord],
+    initial_capital: float = 100_000.0,
+) -> List[EquityPoint]:
     """
-    Build the equity curve with one point per trading day in the range.
-    Rule 3:
-    Equity equals cash while flat and cash + quantity * (close - entry_price) while holding.
-    A signal fills at the close of its date.
+    Build a daily equity curve (one point per trading day).
+
+    TRADING RULE 3:
+    - Equity = cash while flat.
+    - Equity = cash + quantity * (close - entry_price) while holding.
+    Initial capital = 100_000.0.
     """
-    if price_data is None or price_data.empty:
+    if price_data.empty:
         return []
 
-    # Sort trades chronologically
-    sorted_trades = sorted(trades, key=lambda t: (t.entry_date, t.exit_date))
-
-    curve: list[EquityPoint] = []
-    current_cash = float(initial_capital)
+    # Build a quick lookup from trade exit_date → trade for fast access
+    # Sort trades by entry_date for linear sweep
+    sorted_trades = sorted(trades, key=lambda t: t.entry_date)
     trade_idx = 0
-    n_trades = len(sorted_trades)
 
-    for i in range(len(price_data)):
-        row = price_data.iloc[i]
-        d = _to_date(row["date"])
-        close = float(row["close"])
+    cash = initial_capital
+    holding: bool = False
+    current_trade: "TradeRecord | None" = None
 
-        # Check if we have an active or upcoming trade
-        if trade_idx < n_trades:
-            curr_trade = sorted_trades[trade_idx]
+    curve: List[EquityPoint] = []
 
-            if d < curr_trade.entry_date:
-                # Flat before trade entry
-                equity = current_cash
-            elif curr_trade.entry_date <= d < curr_trade.exit_date:
-                # Holding position
-                equity = current_cash + curr_trade.quantity * (close - curr_trade.entry_price)
-            elif d == curr_trade.exit_date:
-                # Trade completes on this bar at close
-                current_cash += curr_trade.pnl
-                equity = current_cash
-                trade_idx += 1
-                # In case subsequent trades immediately start (edge cases)
-                while trade_idx < n_trades and sorted_trades[trade_idx].exit_date < d:
-                    current_cash += sorted_trades[trade_idx].pnl
-                    equity = current_cash
-                    trade_idx += 1
-            else:
-                # d is past curr_trade.exit_date, advance until relevant
-                while trade_idx < n_trades and sorted_trades[trade_idx].exit_date <= d:
-                    current_cash += sorted_trades[trade_idx].pnl
-                    trade_idx += 1
-                
-                if trade_idx < n_trades:
-                    next_trade = sorted_trades[trade_idx]
-                    if d < next_trade.entry_date:
-                        equity = current_cash
-                    elif next_trade.entry_date <= d < next_trade.exit_date:
-                        equity = current_cash + next_trade.quantity * (close - next_trade.entry_price)
-                    else:
-                        current_cash += next_trade.pnl
-                        equity = current_cash
-                        trade_idx += 1
-                else:
-                    equity = current_cash
+    for _, row in price_data.iterrows():
+        bar_date: date = row["date"].date() if hasattr(row["date"], "date") else row["date"]
+        close: float = float(row["close"])
+
+        # Check if a new trade starts on this bar
+        if not holding and trade_idx < len(sorted_trades):
+            t = sorted_trades[trade_idx]
+            if t.entry_date == bar_date:
+                holding = True
+                current_trade = t
+
+        # Check if the current trade exits on this bar
+        if holding and current_trade is not None and current_trade.exit_date == bar_date:
+            cash = cash + current_trade.pnl
+            holding = False
+            current_trade = None
+            trade_idx += 1
+
+        # Compute equity
+        if holding and current_trade is not None:
+            equity = cash + current_trade.quantity * (close - current_trade.entry_price)
         else:
-            # All trades completed, flat
-            equity = current_cash
+            equity = cash
 
-        curve.append(EquityPoint(date=d, equity=equity))
+        curve.append(EquityPoint(date=bar_date, equity=equity))
 
     return curve

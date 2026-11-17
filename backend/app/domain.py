@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from datetime import date
 
+
 @dataclass
 class Signal:
     date: date
     action: str        # "BUY" or "SELL"
     price: float       # close of that day
+
 
 @dataclass
 class TradeRecord:
@@ -16,10 +18,12 @@ class TradeRecord:
     quantity: int
     pnl: float
 
+
 @dataclass
 class EquityPoint:
     date: date
     equity: float
+
 
 @dataclass
 class MetricsResult:
@@ -28,6 +32,7 @@ class MetricsResult:
     win_rate: float
     cagr: float
     total_return: float
+
 
 class ValidationError(Exception): ...         # HTTP 400
 class AuthError(Exception): ...               # HTTP 401

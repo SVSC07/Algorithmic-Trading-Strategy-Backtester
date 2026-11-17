@@ -1,18 +1,26 @@
-# STUB, owned by Rishabh, replaced on merge
+# STUB — owned by Rishabh, replaced on merge
+"""
+repositories/strategy_repository.py
+StrategyRepository stub.
+"""
+from typing import List, Optional
+
 from sqlalchemy.orm import Session
-from app.models.strategy import Strategy
+
+from app.models import Strategy
+
 
 class StrategyRepository:
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, session: Session) -> None:
+        self._session = session
 
     def save(self, strategy: Strategy) -> Strategy:
-        self.session.add(strategy)
-        self.session.flush()
+        self._session.add(strategy)
+        self._session.flush()
         return strategy
 
-    def find_by_id(self, strategy_id: int) -> Strategy | None:
-        return self.session.query(Strategy).filter(Strategy.strategy_id == strategy_id).first()
+    def find_by_id(self, strategy_id: int) -> Optional[Strategy]:
+        return self._session.query(Strategy).filter_by(strategy_id=strategy_id).first()
 
-    def find_by_user(self, user_id: int) -> list[Strategy]:
-        return self.session.query(Strategy).filter(Strategy.user_id == user_id).order_by(Strategy.strategy_id.desc()).all()
+    def find_by_user(self, user_id: int) -> List[Strategy]:
+        return self._session.query(Strategy).filter_by(user_id=user_id).all()

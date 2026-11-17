@@ -1,125 +1,90 @@
-# STUB, owned by Rishabh, replaced on merge
+# STUB — owned by Rishabh, replaced on merge
+"""
+repositories/instrument_repository.py
+InstrumentRepository stub.
+"""
 from datetime import date
-from typing import Optional
-import pandas as pd
-from sqlalchemy import func
-from sqlalchemy.orm import Session
-from app.models.instrument import Instrument
-from app.models.price_data import PriceData
+from typing import List, Optional, Tuple
 
-def _to_date(val) -> date:
-    if hasattr(val, "date") and callable(val.date):
-        return val.date()
-    if isinstance(val, date):
-        return val
-    return pd.to_datetime(val).date()
+import pandas as pd
+from sqlalchemy.orm import Session
+
+from app.models import Instrument, PriceData
+
 
 class InstrumentRepository:
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, session: Session) -> None:
+        self._session = session
 
     def add(self, inst: Instrument) -> Instrument:
-        self.session.add(inst)
-        self.session.flush()
+        self._session.add(inst)
+        self._session.flush()
         return inst
 
     def update(self, inst: Instrument) -> Instrument:
-        self.session.add(inst)
-        self.session.flush()
+        self._session.flush()
         return inst
 
     def remove(self, instrument_id: int) -> None:
-        inst = self.find_by_id(instrument_id)
+        inst = self._session.query(Instrument).filter_by(instrument_id=instrument_id).first()
         if inst:
-            self.session.query(PriceData).filter(PriceData.instrument_id == instrument_id).delete()
-            self.session.delete(inst)
-            self.session.flush()
+            self._session.delete(inst)
 
-    def list_all(self) -> list[Instrument]:
-        return self.session.query(Instrument).order_by(Instrument.ticker.asc()).all()
+    def list_all(self) -> List[Instrument]:
+        return self._session.query(Instrument).all()
 
-    def find_by_id(self, instrument_id: int) -> Instrument | None:
-        return self.session.query(Instrument).filter(Instrument.instrument_id == instrument_id).first()
+    def find_by_id(self, instrument_id: int) -> Optional[Instrument]:
+        return self._session.query(Instrument).filter_by(instrument_id=instrument_id).first()
 
-    def find_by_ticker(self, ticker: str) -> Instrument | None:
-        return self.session.query(Instrument).filter(Instrument.ticker == ticker).first()
-
-    def save_price_data(self, instrument_id: int, rows: list[dict]) -> int:
-        if not rows:
-            return 0
-
-        # Query existing dates for this instrument to avoid duplicates
-        existing_dates_q = self.session.query(PriceData.date).filter(PriceData.instrument_id == instrument_id).all()
-        existing_dates = {d[0] for d in existing_dates_q}
-
+    def save_price_data(self, instrument_id: int, rows: List[dict]) -> int:
+        """Insert rows, skip duplicates; return inserted count."""
         inserted = 0
-        for r in rows:
-            row_date = _to_date(r["date"])
-            if row_date in existing_dates:
-                continue
-
-            record = PriceData(
-                instrument_id=instrument_id,
-                date=row_date,
-                open=float(r["open"]),
-                high=float(r["high"]),
-                low=float(r["low"]),
-                close=float(r["close"]),
-                volume=float(r["volume"]),
+        for row in rows:
+            existing = (
+                self._session.query(PriceData)
+                .filter_by(instrument_id=instrument_id, date=row["date"])
+                .first()
             )
-            self.session.add(record)
-            existing_dates.add(row_date)
-            inserted += 1
-
-        self.session.flush()
+            if existing is None:
+                self._session.add(PriceData(instrument_id=instrument_id, **row))
+                inserted += 1
+        self._session.flush()
         return inserted
 
-    def get_price_data(self, instrument_id: int, start: date, end: date) -> pd.DataFrame:
-        start_date = _to_date(start)
-        end_date = _to_date(end)
-
-        records = (
-            self.session.query(PriceData)
+    def get_price_data(
+        self, instrument_id: int, start: date, end: date
+    ) -> pd.DataFrame:
+        """Return DataFrame with columns date, open, high, low, close, volume, ascending by date."""
+        rows = (
+            self._session.query(PriceData)
             .filter(
                 PriceData.instrument_id == instrument_id,
-                PriceData.date >= start_date,
-                PriceData.date <= end_date,
+                PriceData.date >= start,
+                PriceData.date <= end,
             )
-            .order_by(PriceData.date.asc())
+            .order_by(PriceData.date)
             .all()
         )
-
-        if not records:
+        if not rows:
             return pd.DataFrame(columns=["date", "open", "high", "low", "close", "volume"])
+        data = {
+            "date": pd.to_datetime([r.date for r in rows]),
+            "open": [r.open for r in rows],
+            "high": [r.high for r in rows],
+            "low": [r.low for r in rows],
+            "close": [r.close for r in rows],
+            "volume": [r.volume for r in rows],
+        }
+        return pd.DataFrame(data)
 
-        data = [
-            {
-                "date": r.date,
-                "open": r.open,
-                "high": r.high,
-                "low": r.low,
-                "close": r.close,
-                "volume": r.volume,
-            }
-            for r in records
-        ]
-        df = pd.DataFrame(data)
-        df["date"] = pd.to_datetime(df["date"])
-        df = df.sort_values(by="date", ascending=True).reset_index(drop=True)
-        return df
-
-    def coverage(self, instrument_id: int) -> tuple[Optional[date], Optional[date], int]:
-        result = (
-            self.session.query(
-                func.min(PriceData.date),
-                func.max(PriceData.date),
-                func.count(PriceData.price_id),
-            )
-            .filter(PriceData.instrument_id == instrument_id)
-            .one_or_none()
+    def coverage(self, instrument_id: int) -> Tuple[Optional[date], Optional[date], int]:
+        """Return (first_date, last_date, bar_count)."""
+        rows = (
+            self._session.query(PriceData)
+            .filter_by(instrument_id=instrument_id)
+            .order_by(PriceData.date)
+            .all()
         )
-
-        if not result or result[2] == 0:
-            return None, None, 0
-
-        return result[0], result[1], int(result[2])
+        if not rows:
+            return (None, None, 0)
+        return (rows[0].date, rows[-1].date, len(rows))

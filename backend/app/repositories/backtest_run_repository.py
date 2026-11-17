@@ -1,47 +1,49 @@
-# STUB, owned by Rishabh, replaced on merge
+# STUB — owned by Rishabh, replaced on merge
+"""
+repositories/backtest_run_repository.py
+BacktestRunRepository stub.
+"""
+from typing import List, Optional
+
 from sqlalchemy.orm import Session
+
 from app.domain import TradeRecord
-from app.models.backtest_run import BacktestRun
-from app.models.trade import Trade
+from app.models import BacktestRun, Trade
+
 
 class BacktestRunRepository:
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, session: Session) -> None:
+        self._session = session
 
-    def save(self, run: BacktestRun, trades: list[TradeRecord]) -> BacktestRun:
-        self.session.add(run)
-        self.session.flush()
-
+    def save(self, run: BacktestRun, trades: List[TradeRecord]) -> BacktestRun:
+        """Persist the run and its trades; flush but do not commit."""
+        self._session.add(run)
+        self._session.flush()
         for t in trades:
-            trade_row = Trade(
-                run_id=run.run_id,
-                entry_date=t.entry_date,
-                exit_date=t.exit_date,
-                entry_price=t.entry_price,
-                exit_price=t.exit_price,
-                quantity=t.quantity,
-                pnl=t.pnl,
+            self._session.add(
+                Trade(
+                    run_id=run.run_id,
+                    entry_date=t.entry_date,
+                    exit_date=t.exit_date,
+                    entry_price=t.entry_price,
+                    exit_price=t.exit_price,
+                    quantity=t.quantity,
+                    pnl=t.pnl,
+                )
             )
-            self.session.add(trade_row)
-
-        self.session.flush()
+        self._session.flush()
         return run
 
-    def find_by_id(self, run_id: int) -> BacktestRun | None:
-        return self.session.query(BacktestRun).filter(BacktestRun.run_id == run_id).first()
+    def find_by_id(self, run_id: int) -> Optional[BacktestRun]:
+        return self._session.query(BacktestRun).filter_by(run_id=run_id).first()
 
-    def find_by_user(self, user_id: int) -> list[BacktestRun]:
+    def find_by_user(self, user_id: int) -> List[BacktestRun]:
         return (
-            self.session.query(BacktestRun)
-            .filter(BacktestRun.user_id == user_id)
-            .order_by(BacktestRun.run_id.desc())
+            self._session.query(BacktestRun)
+            .filter_by(user_id=user_id)
+            .order_by(BacktestRun.created_at.desc())
             .all()
         )
 
-    def get_trades(self, run_id: int) -> list[Trade]:
-        return (
-            self.session.query(Trade)
-            .filter(Trade.run_id == run_id)
-            .order_by(Trade.entry_date.asc(), Trade.trade_id.asc())
-            .all()
-        )
+    def get_trades(self, run_id: int) -> List[Trade]:
+        return self._session.query(Trade).filter_by(run_id=run_id).all()

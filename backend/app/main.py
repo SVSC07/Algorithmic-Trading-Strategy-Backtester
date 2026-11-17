@@ -1,23 +1,28 @@
-# STUB, owned by Molik, replaced on merge
+"""
+main.py
+FastAPI application factory.
+
+Assembles all routers under /api, adds /health, CORS for http://localhost:5173,
+error handlers, and the get_session dependency.
+Interactive docs are served at /docs.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.database import engine
-from app.models.base import Base
-from app.core.errors import register_error_handlers
-from app.api.auth import router as auth_router
-from app.api.strategies import router as strategies_router
-from app.api.instruments import router as instruments_router
-from app.api.backtests import router as backtests_router
 
-# Ensure tables exist
-Base.metadata.create_all(bind=engine)
+from app.api import auth, backtests, instruments, strategies
+from app.core.errors import register_error_handlers
 
 app = FastAPI(
-    title="Algorithmic Trading Strategy Backtester API",
+    title="Algorithmic Trading Strategy Backtester",
+    description="JSS University Noida — Software Engineering Mini Project",
     version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# CORS configuration
+# ---------------------------------------------------------------------------
+# CORS
+# ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -26,16 +31,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register custom error mapping
+# ---------------------------------------------------------------------------
+# Error handlers  (must be registered before routers)
+# ---------------------------------------------------------------------------
 register_error_handlers(app)
 
-# Health endpoint
-@app.get("/health", tags=["health"])
-def health_check():
-    return {"status": "ok"}
+# ---------------------------------------------------------------------------
+# Routers — all under /api
+# ---------------------------------------------------------------------------
+app.include_router(auth.router, prefix="/api")
+app.include_router(strategies.router, prefix="/api")
+app.include_router(instruments.router, prefix="/api")
+app.include_router(backtests.router, prefix="/api")
 
-# Mount API routers under /api
-app.include_router(auth_router, prefix="/api")
-app.include_router(strategies_router, prefix="/api")
-app.include_router(instruments_router, prefix="/api")
-app.include_router(backtests_router, prefix="/api")
+
+# ---------------------------------------------------------------------------
+# Health check (public)
+# ---------------------------------------------------------------------------
+@app.get("/health", tags=["health"])
+def health():
+    """Public health probe used by infra and the frontend."""
+    return {"status": "ok"}

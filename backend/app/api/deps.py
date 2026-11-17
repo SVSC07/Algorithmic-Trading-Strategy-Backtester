@@ -1,30 +1,57 @@
-# STUB, owned by Molik, replaced on merge
+"""
+api/deps.py
+Shared FastAPI dependencies: get_session, get_current_user, require_role.
+"""
+from typing import Callable
+
 from fastapi import Depends, Header
 from sqlalchemy.orm import Session
-from app.core.database import get_db
+
+from app.core.database import SessionLocal
+from app.core.security import decode_token
 from app.domain import AuthError, ForbiddenError
-from app.models.user import User
+from app.models import User
 from app.repositories.user_repository import UserRepository
-from app.services.auth_service import AuthService
+
+
+def get_session() -> Session:  # type: ignore[return]
+    """Yield one SQLAlchemy session per request; always close it."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 def get_current_user(
-    authorization: str | None = Header(None),
-    db: Session = Depends(get_db),
+    authorization: str | None = Header(default=None),
+    session: Session = Depends(get_session),
 ) -> User:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise AuthError("Missing or invalid Authorization header")
+    """
+    Extract the bearer token from the Authorization header and return the User.
 
-    token = authorization.split(" ", 1)[1]
-    user_repo = UserRepository(db)
-    auth_service = AuthService(db, user_repo)
-    return auth_service.user_from_token(token)
+    Raises AuthError when the header is missing, malformed, or the token is invalid.
+    """
+    if authorization is None or not authorization.startswith("Bearer "):
+        raise AuthError("Authorization header missing or malformed")
+    token = authorization.removeprefix("Bearer ").strip()
+    payload = decode_token(token)
+    user_id = payload.get("user_id")
+    repo = UserRepository(session)
+    user = repo.find_by_id(user_id)
+    if user is None:
+        raise AuthError("User not found")
+    return user
 
-def require_trader(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role not in ("TRADER", "ADMIN"):
-        raise ForbiddenError("Trader privileges required")
-    return current_user
 
-def require_admin(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role != "ADMIN":
-        raise ForbiddenError("Admin privileges required")
-    return current_user
+def require_role(*roles: str) -> Callable:
+    """Return a dependency that raises ForbiddenError if the user's role is not in *roles*."""
+
+    def _check(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in roles:
+            raise ForbiddenError(
+                f"This action requires one of: {', '.join(roles)}"
+            )
+        return current_user
+
+    return _check

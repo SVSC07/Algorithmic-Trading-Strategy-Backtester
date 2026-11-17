@@ -1,92 +1,136 @@
-# STUB, owned by Molik, replaced on merge
+"""
+services/metrics_calculator.py
+Stateless MetricsCalculator — implements TRADING RULE 6 exactly.
+
+All metrics are decimal fractions (never percents). Every division is guarded
+so edge cases (zero trades, constant equity, single point, zero calendar days,
+NaN/inf) always return 0.0 instead of raising or propagating NaN.
+"""
 import math
-import numpy as np
-from app.domain import TradeRecord, EquityPoint, MetricsResult
+from typing import List
+
+from app.domain import EquityPoint, MetricsResult, TradeRecord
+
 
 class MetricsCalculator:
     """
-    Calculates quantitative metrics according to Trading Rule 6:
-    - total_return = final_equity / initial - 1
-    - cagr = (final_equity / initial) ^ (365.25 / calendar_days) - 1
-    - sharpe_ratio = sqrt(252) * mean(daily_returns) / std(daily_returns, ddof=1)
-    - max_drawdown = min(equity / running_peak - 1)
-    - win_rate = trades with pnl > 0 / total trades
+    calculate(trades, run, equity_curve) -> MetricsResult
+
+    *run* only needs to expose `.start_date` and `.end_date` (date objects).
+    *equity_curve* is a list of EquityPoint ordered by date.
     """
 
-    @classmethod
     def calculate(
-        cls,
-        trades: list[TradeRecord],
+        self,
+        trades: List[TradeRecord],
         run,
-        equity_curve: list[EquityPoint],
+        equity_curve: List[EquityPoint],
     ) -> MetricsResult:
-        if not equity_curve:
-            return MetricsResult(
-                sharpe_ratio=0.0,
-                max_drawdown=0.0,
-                win_rate=0.0,
-                cagr=0.0,
-                total_return=0.0,
-            )
+        """Return MetricsResult for a completed backtest run."""
+        return MetricsResult(
+            total_return=self._total_return(equity_curve),
+            cagr=self._cagr(equity_curve, run),
+            sharpe_ratio=self._sharpe(equity_curve),
+            max_drawdown=self._max_drawdown(equity_curve),
+            win_rate=self._win_rate(trades),
+        )
 
+    # ------------------------------------------------------------------
+    # Private formula helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _total_return(equity_curve: List[EquityPoint]) -> float:
+        """
+        total_return = final_equity / initial_equity - 1.
+        Returns 0.0 if fewer than 2 points or initial equity is 0.
+        """
+        if len(equity_curve) < 2:
+            return 0.0
         initial = equity_curve[0].equity
         final = equity_curve[-1].equity
+        if initial == 0.0:
+            return 0.0
+        result = final / initial - 1.0
+        return 0.0 if (math.isnan(result) or math.isinf(result)) else result
 
-        # 1. Total Return
-        total_return = (final / initial - 1.0) if initial > 0 else 0.0
+    @staticmethod
+    def _cagr(equity_curve: List[EquityPoint], run) -> float:
+        """
+        cagr = (final / initial) ^ (365.25 / calendar_days) - 1.
+        calendar_days = (end_date - start_date).days.
+        Returns 0.0 if calendar_days <= 0, fewer than 2 points, or initial == 0.
+        """
+        if len(equity_curve) < 2:
+            return 0.0
+        calendar_days = (run.end_date - run.start_date).days
+        if calendar_days <= 0:
+            return 0.0
+        initial = equity_curve[0].equity
+        final = equity_curve[-1].equity
+        if initial == 0.0:
+            return 0.0
+        try:
+            result = (final / initial) ** (365.25 / calendar_days) - 1.0
+        except (ZeroDivisionError, OverflowError, ValueError):
+            return 0.0
+        return 0.0 if (math.isnan(result) or math.isinf(result)) else result
 
-        # 2. CAGR
-        start_date = getattr(run, "start_date", None)
-        end_date = getattr(run, "end_date", None)
-        cagr = 0.0
-        if start_date and end_date and initial > 0 and final > 0:
-            calendar_days = (end_date - start_date).days
-            if calendar_days > 0:
-                cagr = math.pow(final / initial, 365.25 / calendar_days) - 1.0
-
-        # 3. Sharpe Ratio
-        equities = [p.equity for p in equity_curve]
-        if len(equities) >= 3:  # At least 2 daily returns
-            daily_returns = [
-                (equities[i] - equities[i - 1]) / equities[i - 1]
-                for i in range(1, len(equities))
-                if equities[i - 1] > 0
-            ]
-            if len(daily_returns) >= 2:
-                mean_r = float(np.mean(daily_returns))
-                std_r = float(np.std(daily_returns, ddof=1))
-                if std_r > 1e-9:
-                    sharpe_ratio = math.sqrt(252) * mean_r / std_r
-                else:
-                    sharpe_ratio = 0.0
+    @staticmethod
+    def _sharpe(equity_curve: List[EquityPoint]) -> float:
+        """
+        sharpe_ratio = sqrt(252) * mean(daily_returns) / std(daily_returns, ddof=1).
+        daily_returns = day-over-day percentage changes of equity.
+        Returns 0.0 if fewer than 2 returns or std == 0.
+        """
+        equities = [pt.equity for pt in equity_curve]
+        if len(equities) < 2:
+            return 0.0
+        # percentage changes: (e[i] - e[i-1]) / e[i-1]
+        returns: List[float] = []
+        for i in range(1, len(equities)):
+            prev = equities[i - 1]
+            if prev == 0.0:
+                returns.append(0.0)
             else:
-                sharpe_ratio = 0.0
-        else:
-            sharpe_ratio = 0.0
+                returns.append((equities[i] - prev) / prev)
+        if len(returns) < 2:
+            return 0.0
+        n = len(returns)
+        mean_r = sum(returns) / n
+        variance = sum((r - mean_r) ** 2 for r in returns) / (n - 1)
+        if variance == 0.0:
+            return 0.0
+        std_r = math.sqrt(variance)
+        result = math.sqrt(252) * mean_r / std_r
+        return 0.0 if (math.isnan(result) or math.isinf(result)) else result
 
-        # 4. Max Drawdown
-        running_peak = equities[0]
-        min_drawdown = 0.0
-        for eq in equities:
-            if eq > running_peak:
-                running_peak = eq
-            if running_peak > 0:
-                dd = (eq / running_peak) - 1.0
-                if dd < min_drawdown:
-                    min_drawdown = dd
-        max_drawdown = min_drawdown
+    @staticmethod
+    def _max_drawdown(equity_curve: List[EquityPoint]) -> float:
+        """
+        max_drawdown = min(equity / running_peak - 1).
+        e.g. -0.186. Returns 0.0 if equity never falls below the running peak.
+        """
+        if not equity_curve:
+            return 0.0
+        peak = equity_curve[0].equity
+        min_dd = 0.0
+        for pt in equity_curve:
+            if pt.equity > peak:
+                peak = pt.equity
+            if peak > 0.0:
+                dd = pt.equity / peak - 1.0
+                if dd < min_dd:
+                    min_dd = dd
+        return 0.0 if (math.isnan(min_dd) or math.isinf(min_dd)) else min_dd
 
-        # 5. Win Rate
-        if trades:
-            winning_trades = sum(1 for t in trades if t.pnl > 0)
-            win_rate = winning_trades / len(trades)
-        else:
-            win_rate = 0.0
-
-        return MetricsResult(
-            sharpe_ratio=float(sharpe_ratio),
-            max_drawdown=float(max_drawdown),
-            win_rate=float(win_rate),
-            cagr=float(cagr),
-            total_return=float(total_return),
-        )
+    @staticmethod
+    def _win_rate(trades: List[TradeRecord]) -> float:
+        """
+        win_rate = trades with pnl > 0 / total trades.
+        Returns 0.0 if no trades.
+        """
+        if not trades:
+            return 0.0
+        winners = sum(1 for t in trades if t.pnl > 0)
+        return winners / len(trades)

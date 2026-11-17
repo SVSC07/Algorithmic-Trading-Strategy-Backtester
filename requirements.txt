@@ -1,9 +1,4 @@
-alembic
-bcrypt
-fastapi
-pandas
-pyjwt
-pytest
-python-multipart
-sqlalchemy
-uvicorn
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+pandas>=2.0.0
+pytest>=8.0.0

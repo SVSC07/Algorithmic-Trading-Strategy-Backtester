@@ -1,69 +1,114 @@
-# STUB, owned by Molik, replaced on merge
-from fastapi import APIRouter, Depends, UploadFile, File, status
+"""
+api/instruments.py
+Instrument endpoints:
+  GET  /api/instruments          TRADER, ADMIN
+  POST /api/instruments          ADMIN
+  PUT  /api/instruments/{id}     ADMIN
+  DELETE /api/instruments/{id}   ADMIN
+  POST /api/instruments/{id}/prices   ADMIN (multipart)
+"""
+from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from app.core.database import get_db
-from app.api.deps import require_trader, require_admin
-from app.models.user import User
+
+from app.api.deps import get_session, require_role
+from app.models import User
 from app.repositories.instrument_repository import InstrumentRepository
 from app.services.instrument_service import InstrumentService
 
 router = APIRouter(prefix="/instruments", tags=["instruments"])
 
-class InstrumentPayload(BaseModel):
+_TRADER_OR_ADMIN = require_role("TRADER", "ADMIN")
+_ADMIN = require_role("ADMIN")
+
+
+class InstrumentRequest(BaseModel):
     ticker: str
     name: str
     asset_class: str
 
-@router.get("", status_code=status.HTTP_200_OK)
+
+def _instrument_shape(inst, coverage=None) -> dict:
+    if coverage is None:
+        first = last = None
+        count = 0
+    else:
+        first, last, count = coverage
+    from app.services.results_service import _fmt_date
+    return {
+        "instrument_id": inst.instrument_id,
+        "ticker": inst.ticker,
+        "name": inst.name,
+        "asset_class": inst.asset_class,
+        "data_start": _fmt_date(first),
+        "data_end": _fmt_date(last),
+        "bar_count": count,
+    }
+
+
+def _svc(session: Session) -> InstrumentService:
+    return InstrumentService(session, InstrumentRepository(session))
+
+
+@router.get("", status_code=200)
 def list_instruments(
-    current_user: User = Depends(require_trader),
-    db: Session = Depends(get_db),
+    session: Session = Depends(get_session),
+    _user: User = Depends(_TRADER_OR_ADMIN),
 ):
-    repo = InstrumentRepository(db)
-    service = InstrumentService(db, repo)
-    return service.list_instruments()
+    """GET /api/instruments — TRADER, ADMIN."""
+    svc = _svc(session)
+    repo = InstrumentRepository(session)
+    instruments = svc.list_instruments()
+    return [_instrument_shape(i, repo.coverage(i.instrument_id)) for i in instruments]
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+
+@router.post("", status_code=201)
 def create_instrument(
-    req: InstrumentPayload,
-    current_user: User = Depends(require_admin),
-    db: Session = Depends(get_db),
+    body: InstrumentRequest,
+    session: Session = Depends(get_session),
+    _user: User = Depends(_ADMIN),
 ):
-    repo = InstrumentRepository(db)
-    service = InstrumentService(db, repo)
-    return service.create_instrument(req.ticker, req.name, req.asset_class)
+    """POST /api/instruments — ADMIN. 409 on duplicate ticker."""
+    svc = _svc(session)
+    repo = InstrumentRepository(session)
+    inst = svc.create_instrument(body.ticker, body.name, body.asset_class)
+    return _instrument_shape(inst, repo.coverage(inst.instrument_id))
 
-@router.put("/{instrument_id}", status_code=status.HTTP_200_OK)
+
+@router.put("/{instrument_id}", status_code=200)
 def update_instrument(
     instrument_id: int,
-    req: InstrumentPayload,
-    current_user: User = Depends(require_admin),
-    db: Session = Depends(get_db),
+    body: InstrumentRequest,
+    session: Session = Depends(get_session),
+    _user: User = Depends(_ADMIN),
 ):
-    repo = InstrumentRepository(db)
-    service = InstrumentService(db, repo)
-    return service.update_instrument(instrument_id, req.ticker, req.name, req.asset_class)
+    """PUT /api/instruments/{id} — ADMIN."""
+    svc = _svc(session)
+    repo = InstrumentRepository(session)
+    inst = svc.update_instrument(instrument_id, body.ticker, body.name, body.asset_class)
+    return _instrument_shape(inst, repo.coverage(inst.instrument_id))
 
-@router.delete("/{instrument_id}", status_code=status.HTTP_204_NO_CONTENT)
+
+@router.delete("/{instrument_id}", status_code=204)
 def delete_instrument(
     instrument_id: int,
-    current_user: User = Depends(require_admin),
-    db: Session = Depends(get_db),
+    session: Session = Depends(get_session),
+    _user: User = Depends(_ADMIN),
 ):
-    repo = InstrumentRepository(db)
-    service = InstrumentService(db, repo)
-    service.delete_instrument(instrument_id)
+    """DELETE /api/instruments/{id} — ADMIN. 409 if any run references it."""
+    svc = _svc(session)
+    svc.delete_instrument(instrument_id)
     return None
 
-@router.post("/{instrument_id}/prices", status_code=status.HTTP_200_OK)
-async def upload_prices(
+
+@router.post("/{instrument_id}/prices", status_code=200)
+async def import_prices(
     instrument_id: int,
     file: UploadFile = File(...),
-    current_user: User = Depends(require_admin),
-    db: Session = Depends(get_db),
+    session: Session = Depends(get_session),
+    _user: User = Depends(_ADMIN),
 ):
-    repo = InstrumentRepository(db)
-    service = InstrumentService(db, repo)
+    """POST /api/instruments/{id}/prices — ADMIN. Multipart field 'file', CSV."""
     csv_bytes = await file.read()
-    return service.import_prices(instrument_id, csv_bytes)
+    svc = _svc(session)
+    return svc.import_prices(instrument_id, csv_bytes)
