@@ -3,12 +3,13 @@ import type { Strategy, StrategyType } from '../types/api';
 import { listStrategies, createStrategy } from '../api/strategies';
 import { validateStrategyForm } from '../lib/strategy-validation';
 import { ApiError } from '../api/http';
+import { CustomSelect } from '../components/CustomSelect';
 import { Sliders, Plus, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const Strategies: React.FC = () => {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [strategyType, setStrategyType] = useState<StrategyType>('MOVING_AVERAGE_CROSSOVER');
-  
+
   // Moving Average inputs
   const [shortWindow, setShortWindow] = useState('20');
   const [longWindow, setLongWindow] = useState('50');
@@ -171,19 +172,23 @@ export const Strategies: React.FC = () => {
             <label className="form-label" htmlFor="strategy-type-select">
               Strategy Type
             </label>
-            <select
+            <CustomSelect
               id="strategy-type-select"
-              className="form-select"
               value={strategyType}
-              onChange={(e) => setStrategyType(e.target.value as StrategyType)}
-            >
-              <option value="MOVING_AVERAGE_CROSSOVER">
-                Moving Average Crossover (SMA)
-              </option>
-              <option value="MEAN_REVERSION">
-                Mean Reversion (Rolling Mean & Threshold)
-              </option>
-            </select>
+              onChange={(val) => setStrategyType(val as StrategyType)}
+              options={[
+                {
+                  value: 'MOVING_AVERAGE_CROSSOVER',
+                  label: 'Moving Average Crossover (SMA)',
+                  badge: 'Trend',
+                },
+                {
+                  value: 'MEAN_REVERSION',
+                  label: 'Mean Reversion (Rolling Mean & Threshold)',
+                  badge: 'Mean Rev',
+                },
+              ]}
+            />
           </div>
 
           {/* Conditional parameter inputs */}

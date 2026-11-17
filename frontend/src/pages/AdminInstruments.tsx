@@ -8,6 +8,7 @@ import {
   importPrices,
 } from '../api/instruments';
 import { ApiError } from '../api/http';
+import { CustomSelect } from '../components/CustomSelect';
 import {
   Plus,
   Edit2,
@@ -238,17 +239,17 @@ export const AdminInstruments: React.FC = () => {
                 <label className="form-label" htmlFor="new-asset-class-input">
                   Asset Class
                 </label>
-                <select
+                <CustomSelect
                   id="new-asset-class-input"
-                  className="form-select"
                   value={newAssetClass}
-                  onChange={(e) => setNewAssetClass(e.target.value)}
-                >
-                  <option value="EQUITY">EQUITY</option>
-                  <option value="COMMODITY">COMMODITY</option>
-                  <option value="FOREX">FOREX</option>
-                  <option value="CRYPTO">CRYPTO</option>
-                </select>
+                  onChange={(val) => setNewAssetClass(String(val))}
+                  options={[
+                    { value: 'EQUITY', label: 'EQUITY' },
+                    { value: 'COMMODITY', label: 'COMMODITY' },
+                    { value: 'FOREX', label: 'FOREX' },
+                    { value: 'CRYPTO', label: 'CRYPTO' },
+                  ]}
+                />
               </div>
             </div>
 
@@ -384,17 +385,18 @@ export const AdminInstruments: React.FC = () => {
 
                     <td>
                       {isEditing ? (
-                        <select
-                          className="form-select"
-                          style={{ padding: '6px 10px', fontSize: '13px' }}
+                        <CustomSelect
                           value={editAssetClass}
-                          onChange={(e) => setEditAssetClass(e.target.value)}
-                        >
-                          <option value="EQUITY">EQUITY</option>
-                          <option value="COMMODITY">COMMODITY</option>
-                          <option value="FOREX">FOREX</option>
-                          <option value="CRYPTO">CRYPTO</option>
-                        </select>
+                          onChange={(val) => setEditAssetClass(String(val))}
+                          size="small"
+                          options={[
+                            { value: 'EQUITY', label: 'EQUITY' },
+                            { value: 'COMMODITY', label: 'COMMODITY' },
+                            { value: 'FOREX', label: 'FOREX' },
+                            { value: 'CRYPTO', label: 'CRYPTO' },
+                          ]}
+                          style={{ minWidth: '130px' }}
+                        />
                       ) : (
                         <span className="badge badge-neutral">{inst.asset_class}</span>
                       )}

@@ -4,6 +4,7 @@ import type { RunSummary, RunDetail } from '../types/api';
 import { listBacktests, compareBacktests } from '../api/backtests';
 import { formatPercent, formatSharpe, formatCurrency } from '../lib/format';
 import { ApiError } from '../api/http';
+import { CustomSelect } from '../components/CustomSelect';
 import {
   LineChart,
   Line,
@@ -177,18 +178,16 @@ export const Compare: React.FC = () => {
                 Run A (Accent Curve)
               </span>
             </label>
-            <select
+            <CustomSelect
               id="select-run-a"
-              className="form-select"
               value={runAId}
-              onChange={(e) => handleRunChange('A', Number(e.target.value))}
-            >
-              {recentRuns.map((r) => (
-                <option key={`a-${r.run_id}`} value={r.run_id}>
-                  #{r.run_id} — {r.ticker} ({r.strategy_type === 'MOVING_AVERAGE_CROSSOVER' ? 'MA Crossover' : 'Mean Rev'}) | Return: {formatPercent(r.total_return, { showPositiveSign: true })}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => handleRunChange('A', Number(val))}
+              options={recentRuns.map((r) => ({
+                value: r.run_id,
+                label: `#${r.run_id} — ${r.ticker} (${r.strategy_type === 'MOVING_AVERAGE_CROSSOVER' ? 'MA Crossover' : 'Mean Rev'})`,
+                badge: r.total_return !== null ? formatPercent(r.total_return, { showPositiveSign: true }) : undefined,
+              }))}
+            />
           </div>
 
           {/* Run B select */}
@@ -199,18 +198,16 @@ export const Compare: React.FC = () => {
                 Run B (Muted Curve)
               </span>
             </label>
-            <select
+            <CustomSelect
               id="select-run-b"
-              className="form-select"
               value={runBId}
-              onChange={(e) => handleRunChange('B', Number(e.target.value))}
-            >
-              {recentRuns.map((r) => (
-                <option key={`b-${r.run_id}`} value={r.run_id}>
-                  #{r.run_id} — {r.ticker} ({r.strategy_type === 'MOVING_AVERAGE_CROSSOVER' ? 'MA Crossover' : 'Mean Rev'}) | Return: {formatPercent(r.total_return, { showPositiveSign: true })}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => handleRunChange('B', Number(val))}
+              options={recentRuns.map((r) => ({
+                value: r.run_id,
+                label: `#${r.run_id} — ${r.ticker} (${r.strategy_type === 'MOVING_AVERAGE_CROSSOVER' ? 'MA Crossover' : 'Mean Rev'})`,
+                badge: r.total_return !== null ? formatPercent(r.total_return, { showPositiveSign: true }) : undefined,
+              }))}
+            />
           </div>
         </div>
       </div>
@@ -264,8 +261,8 @@ export const Compare: React.FC = () => {
                             color: isDiffZero
                               ? 'var(--text-muted)'
                               : isDiffPositive
-                              ? 'var(--gain)'
-                              : 'var(--loss)',
+                                ? 'var(--gain)'
+                                : 'var(--loss)',
                           }}
                         >
                           {row.diffFormatted}

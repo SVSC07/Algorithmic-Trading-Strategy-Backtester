@@ -6,6 +6,7 @@ import { listInstruments } from '../api/instruments';
 import { listBacktests, createBacktest } from '../api/backtests';
 import { formatPercent, formatCurrency, formatDate } from '../lib/format';
 import { ApiError } from '../api/http';
+import { CustomSelect } from '../components/CustomSelect';
 import {
   Play,
   ArrowUpRight,
@@ -264,21 +265,21 @@ export const Run: React.FC = () => {
               <label className="form-label" htmlFor="run-strategy-select">
                 Trading Strategy
               </label>
-              <select
+              <CustomSelect
                 id="run-strategy-select"
-                className="form-select"
                 value={selectedStrategyId}
-                onChange={(e) => setSelectedStrategyId(Number(e.target.value))}
+                onChange={(val) => setSelectedStrategyId(Number(val))}
                 required
-              >
-                {strategies.map((strat) => (
-                  <option key={strat.strategy_id} value={strat.strategy_id}>
-                    #{strat.strategy_id} — {strat.strategy_type === 'MOVING_AVERAGE_CROSSOVER'
+                options={strategies.map((strat) => ({
+                  value: strat.strategy_id,
+                  label: `#${strat.strategy_id} — ${
+                    strat.strategy_type === 'MOVING_AVERAGE_CROSSOVER'
                       ? `Moving Avg (${(strat.parameters as any).short_window}/${(strat.parameters as any).long_window})`
-                      : `Mean Rev (lookback ${(strat.parameters as any).lookback_period})`}
-                  </option>
-                ))}
-              </select>
+                      : `Mean Rev (lookback ${(strat.parameters as any).lookback_period})`
+                  }`,
+                  badge: strat.strategy_type === 'MOVING_AVERAGE_CROSSOVER' ? 'SMA' : 'Mean Rev',
+                }))}
+              />
             </div>
 
             {/* Instrument Select */}
@@ -286,19 +287,17 @@ export const Run: React.FC = () => {
               <label className="form-label" htmlFor="run-instrument-select">
                 Target Instrument
               </label>
-              <select
+              <CustomSelect
                 id="run-instrument-select"
-                className="form-select"
                 value={selectedInstrumentId}
-                onChange={(e) => handleInstrumentChange(Number(e.target.value))}
+                onChange={(val) => handleInstrumentChange(Number(val))}
                 required
-              >
-                {instruments.map((inst) => (
-                  <option key={inst.instrument_id} value={inst.instrument_id}>
-                    {inst.ticker} — {inst.name} ({inst.asset_class})
-                  </option>
-                ))}
-              </select>
+                options={instruments.map((inst) => ({
+                  value: inst.instrument_id,
+                  label: `${inst.ticker} — ${inst.name}`,
+                  badge: inst.asset_class,
+                }))}
+              />
 
               {/* Coverage display underneath as requested in contract FR-3 */}
               <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -422,13 +421,12 @@ export const Run: React.FC = () => {
                     </td>
                     <td>
                       <span
-                        className={`badge ${
-                          run.status === 'COMPLETED'
-                            ? 'badge-gain'
-                            : run.status === 'INSUFFICIENT_DATA'
+                        className={`badge ${run.status === 'COMPLETED'
+                          ? 'badge-gain'
+                          : run.status === 'INSUFFICIENT_DATA'
                             ? 'badge-loss'
                             : 'badge-neutral'
-                        }`}
+                          }`}
                       >
                         {run.status}
                       </span>
