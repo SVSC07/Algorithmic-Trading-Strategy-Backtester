@@ -1,4 +1,4 @@
-# QuantBacktest Pro — Frontend Application
+# QuantTest — Frontend Application
 
 > **Project:** Algorithmic Trading Strategy Backtester  
 > **Course:** Software Engineering Mini Project, JSS University Noida  

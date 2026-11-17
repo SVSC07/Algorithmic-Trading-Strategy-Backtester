@@ -93,19 +93,24 @@ export const Login: React.FC = () => {
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div
             style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '50%',
-              background: 'var(--accent-lime)',
-              color: 'var(--accent-dark)',
+              width: '64px',
+              height: '64px',
+              borderRadius: '16px',
+              overflow: 'hidden',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: '16px',
-              boxShadow: '0 4px 14px rgba(163, 230, 53, 0.4)',
+              boxShadow: '0 6px 18px rgba(163, 230, 53, 0.4)',
+              border: '2px solid rgba(163, 230, 53, 0.5)',
+              backgroundColor: '#C8F90A',
             }}
           >
-            <TrendingUp size={28} />
+            <img
+              src="/logo.png"
+              alt="QuantTest Logo"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </div>
           <h1
             style={{
@@ -116,7 +121,7 @@ export const Login: React.FC = () => {
               fontFamily: 'var(--font-heading)',
             }}
           >
-            QuantBacktest Pro
+            QuantTest
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
             Algorithmic Trading Strategy Backtesting Engine

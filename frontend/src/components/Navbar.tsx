@@ -26,25 +26,54 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="nav-header">
-      {/* User profile & greeting */}
-      <div className="nav-user">
-        <div className="user-avatar" title={user.email}>
-          {initials}
+      {/* Brand & User profile */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img
+            src="/logo.png"
+            alt="QuantTest Logo"
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              objectFit: 'cover',
+              boxShadow: '0 2px 8px rgba(163, 230, 53, 0.35)',
+            }}
+          />
+          <span
+            style={{
+              fontSize: '18px',
+              fontWeight: 700,
+              fontFamily: 'var(--font-heading)',
+              color: 'var(--text-main)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            QuantTest
+          </span>
         </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>
-              Hello, {user.name}
-            </span>
-            <span
-              className={`badge ${user.role === 'ADMIN' ? 'badge-dark' : 'badge-lime'}`}
-              style={{ fontSize: '11px', padding: '2px 8px' }}
-            >
-              {user.role}
-            </span>
+
+        <div style={{ width: '1px', height: '22px', backgroundColor: 'var(--border)' }} />
+
+        <div className="nav-user">
+          <div className="user-avatar" title={user.email}>
+            {initials}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {user.email}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>
+                Hello, {user.name}
+              </span>
+              <span
+                className={`badge ${user.role === 'ADMIN' ? 'badge-dark' : 'badge-lime'}`}
+                style={{ fontSize: '11px', padding: '2px 8px' }}
+              >
+                {user.role}
+              </span>
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              {user.email}
+            </div>
           </div>
         </div>
       </div>
