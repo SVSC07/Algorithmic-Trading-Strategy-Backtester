@@ -97,9 +97,11 @@ class InstrumentService:
             raise ValidationError("CSV file is empty")
 
         clean_header = [h.strip().lower() for h in header]
-        expected_header = ["date", "open", "high", "low", "close", "volume"]
-        if clean_header != expected_header:
-            raise ValidationError("CSV header must be exactly date,open,high,low,close,volume")
+        expected_standard = ["date", "open", "high", "low", "close", "volume"]
+        expected_yahoo = ["date", "open", "high", "low", "close", "adj close", "volume"]
+        is_yahoo = clean_header == expected_yahoo
+        if clean_header != expected_standard and not is_yahoo:
+            raise ValidationError("CSV header must be date,open,high,low,close,volume (or include adj close)")
 
         rows_to_insert: List[dict] = []
         errors: List[Dict[str, Any]] = []
@@ -107,11 +109,15 @@ class InstrumentService:
         for row_num, row in enumerate(reader, start=2):
             if not row or all(c.strip() == "" for c in row):
                 continue
-            if len(row) < 6:
-                errors.append({"row": row_num, "reason": "Fewer than 6 columns in row"})
+            min_cols = 7 if is_yahoo else 6
+            if len(row) < min_cols:
+                errors.append({"row": row_num, "reason": f"Fewer than {min_cols} columns in row"})
                 continue
 
-            date_str, o_str, h_str, l_str, c_str, v_str = [cell.strip() for cell in row[:6]]
+            if is_yahoo:
+                date_str, o_str, h_str, l_str, c_str, _, v_str = [cell.strip() for cell in row[:7]]
+            else:
+                date_str, o_str, h_str, l_str, c_str, v_str = [cell.strip() for cell in row[:6]]
 
             try:
                 d_val = datetime.strptime(date_str, "%Y-%m-%d").date()
