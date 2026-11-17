@@ -185,36 +185,36 @@ export const Login: React.FC = () => {
         </div>
 
         {/* Bottom Hero Typography & Strategic Message */}
-        <div style={{ position: 'relative', zIndex: 10, maxWidth: '520px' }}>
+        <div style={{ position: 'relative', zIndex: 10, maxWidth: '480px' }}>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '6px 14px',
+              padding: '5px 12px',
               borderRadius: '9999px',
               background: 'rgba(255, 255, 255, 0.08)',
               backdropFilter: 'blur(12px)',
               border: '1px solid rgba(255, 255, 255, 0.14)',
               color: '#FFFFFF',
-              fontSize: '12px',
+              fontSize: '11.5px',
               fontWeight: 500,
-              marginBottom: '20px',
+              marginBottom: '14px',
             }}
           >
-            <Sparkles size={13} color="var(--accent-lime)" />
+            <Sparkles size={12} color="var(--accent-lime)" />
             <span>Algorithmic Trading & Analytics</span>
           </div>
 
           <h2
             style={{
-              fontSize: '42px',
+              fontSize: '34px',
               fontWeight: 700,
               lineHeight: 1.15,
               color: '#FFFFFF',
               letterSpacing: '-0.03em',
               fontFamily: 'var(--font-heading)',
-              marginBottom: '16px',
+              marginBottom: '12px',
             }}
           >
             Your trading strategies,
@@ -224,8 +224,8 @@ export const Login: React.FC = () => {
 
           <p
             style={{
-              fontSize: '15px',
-              lineHeight: 1.65,
+              fontSize: '14px',
+              lineHeight: 1.55,
               color: 'rgba(255, 255, 255, 0.72)',
               margin: 0,
             }}
@@ -242,18 +242,18 @@ export const Login: React.FC = () => {
           className="animate-fade-in"
           style={{
             width: '100%',
-            maxWidth: '430px',
+            maxWidth: '400px',
           }}
         >
           {/* Logo Mark & Header */}
-          <div style={{ marginBottom: '28px' }}>
+          <div style={{ marginBottom: '20px' }}>
             <div
               style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
                 overflow: 'hidden',
-                marginBottom: '20px',
+                marginBottom: '14px',
                 boxShadow: '0 4px 14px rgba(163, 230, 53, 0.4)',
                 border: '1.5px solid rgba(163, 230, 53, 0.5)',
                 backgroundColor: '#C8F90A',
@@ -271,17 +271,17 @@ export const Login: React.FC = () => {
 
             <h1
               style={{
-                fontSize: '32px',
+                fontSize: '28px',
                 fontWeight: 700,
                 color: 'var(--text-main)',
                 letterSpacing: '-0.03em',
                 fontFamily: 'var(--font-heading)',
-                marginBottom: '8px',
+                marginBottom: '4px',
               }}
             >
               {mode === 'login' ? 'Sign In' : 'Create Account'}
             </h1>
-            <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
               {mode === 'login'
                 ? 'Sign in to access your quantitative trading workspace'
                 : 'Register your account to begin backtesting strategies'}
@@ -294,8 +294,8 @@ export const Login: React.FC = () => {
               display: 'flex',
               background: 'var(--bg-subtle)',
               borderRadius: 'var(--radius-pill)',
-              padding: '4px',
-              marginBottom: '24px',
+              padding: '3px',
+              marginBottom: '18px',
               border: '1px solid var(--border)',
             }}
           >
@@ -307,8 +307,8 @@ export const Login: React.FC = () => {
               }}
               style={{
                 flex: 1,
-                padding: '9px 12px',
-                fontSize: '13px',
+                padding: '8px 10px',
+                fontSize: '12.5px',
                 fontWeight: 600,
                 borderRadius: 'var(--radius-pill)',
                 border: 'none',
@@ -328,8 +328,8 @@ export const Login: React.FC = () => {
               }}
               style={{
                 flex: 1,
-                padding: '9px 12px',
-                fontSize: '13px',
+                padding: '8px 10px',
+                fontSize: '12.5px',
                 fontWeight: 600,
                 borderRadius: 'var(--radius-pill)',
                 border: 'none',
@@ -344,13 +344,13 @@ export const Login: React.FC = () => {
           </div>
 
           {error && (
-            <div className="alert-error" role="alert">
+            <div className="alert-error" role="alert" style={{ marginBottom: '14px', padding: '10px 14px', fontSize: '13px' }}>
               {error}
             </div>
           )}
 
           {successMsg && (
-            <div className="alert-success" role="status">
+            <div className="alert-success" role="status" style={{ marginBottom: '14px', padding: '10px 14px', fontSize: '13px' }}>
               {successMsg}
             </div>
           )}
@@ -358,15 +358,15 @@ export const Login: React.FC = () => {
           {/* Form */}
           <form onSubmit={handleSubmit}>
             {mode === 'register' && (
-              <div className="form-group" style={{ marginBottom: '18px' }}>
+              <div className="form-group" style={{ marginBottom: '12px' }}>
                 <label
                   className="form-label"
                   htmlFor="register-name"
                   style={{
-                    fontSize: '13px',
+                    fontSize: '12px',
                     fontWeight: 600,
                     color: 'var(--text-main)',
-                    marginBottom: '6px',
+                    marginBottom: '4px',
                     display: 'block',
                   }}
                 >
@@ -376,7 +376,7 @@ export const Login: React.FC = () => {
                   id="register-name"
                   type="text"
                   className="form-input"
-                  style={{ backgroundColor: 'var(--bg-subtle)', borderColor: 'var(--border)' }}
+                  style={{ backgroundColor: 'var(--bg-subtle)', borderColor: 'var(--border)', padding: '9px 13px', fontSize: '13px' }}
                   placeholder="e.g. Shourya Vardhan"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -385,15 +385,15 @@ export const Login: React.FC = () => {
               </div>
             )}
 
-            <div className="form-group" style={{ marginBottom: '18px' }}>
+            <div className="form-group" style={{ marginBottom: '12px' }}>
               <label
                 className="form-label"
                 htmlFor="auth-email"
                 style={{
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: 600,
                   color: 'var(--text-main)',
-                  marginBottom: '6px',
+                  marginBottom: '4px',
                   display: 'block',
                 }}
               >
@@ -403,7 +403,7 @@ export const Login: React.FC = () => {
                 id="auth-email"
                 type="email"
                 className="form-input"
-                style={{ backgroundColor: 'var(--bg-subtle)', borderColor: 'var(--border)' }}
+                style={{ backgroundColor: 'var(--bg-subtle)', borderColor: 'var(--border)', padding: '9px 13px', fontSize: '13px' }}
                 placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -411,15 +411,15 @@ export const Login: React.FC = () => {
               />
             </div>
 
-            <div className="form-group" style={{ marginBottom: '22px' }}>
+            <div className="form-group" style={{ marginBottom: '16px' }}>
               <label
                 className="form-label"
                 htmlFor="auth-password"
                 style={{
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: 600,
                   color: 'var(--text-main)',
-                  marginBottom: '6px',
+                  marginBottom: '4px',
                   display: 'block',
                 }}
               >
@@ -434,7 +434,7 @@ export const Login: React.FC = () => {
                 id="auth-password"
                 type="password"
                 className="form-input"
-                style={{ backgroundColor: 'var(--bg-subtle)', borderColor: 'var(--border)' }}
+                style={{ backgroundColor: 'var(--bg-subtle)', borderColor: 'var(--border)', padding: '9px 13px', fontSize: '13px' }}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -448,8 +448,8 @@ export const Login: React.FC = () => {
               className="btn btn-primary"
               style={{
                 width: '100%',
-                padding: '13px 20px',
-                fontSize: '14px',
+                padding: '11px 18px',
+                fontSize: '13.5px',
                 fontWeight: 600,
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--accent-dark)',
@@ -459,6 +459,7 @@ export const Login: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
+                marginTop: '4px',
               }}
               disabled={loading}
             >
@@ -467,7 +468,7 @@ export const Login: React.FC = () => {
               ) : (
                 <>
                   <span>{mode === 'login' ? 'Sign In to Workspace' : 'Create Trader Account'}</span>
-                  <ArrowRight size={16} />
+                  <ArrowRight size={15} />
                 </>
               )}
             </button>
@@ -476,20 +477,20 @@ export const Login: React.FC = () => {
           {/* Quick Demo Credentials */}
           <div
             style={{
-              marginTop: '32px',
-              paddingTop: '20px',
+              marginTop: '20px',
+              paddingTop: '16px',
               borderTop: '1px solid var(--border)',
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '8px' }}>
               Quick fill demo accounts:
             </div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
               <button
                 type="button"
                 className="btn btn-secondary"
-                style={{ padding: '7px 14px', fontSize: '12px' }}
+                style={{ padding: '6px 13px', fontSize: '11.5px' }}
                 onClick={() => fillDemoAccount('TRADER')}
               >
                 <TrendingUp size={12} color="var(--gain)" />
@@ -498,7 +499,7 @@ export const Login: React.FC = () => {
               <button
                 type="button"
                 className="btn btn-secondary"
-                style={{ padding: '7px 14px', fontSize: '12px' }}
+                style={{ padding: '6px 13px', fontSize: '11.5px' }}
                 onClick={() => fillDemoAccount('ADMIN')}
               >
                 <ShieldCheck size={12} color="var(--accent-dark)" />

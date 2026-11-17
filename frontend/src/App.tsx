@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navbar } from './components/Navbar';
@@ -24,10 +24,13 @@ const RootRedirect: React.FC = () => {
 };
 
 export const AppContent: React.FC = () => {
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/login';
+
   return (
-    <div className="app-container">
-      <Navbar />
-      <main className="main-sheet">
+    <div className={`app-container ${isAuthPage ? 'auth-mode' : ''}`}>
+      {!isAuthPage && <Navbar />}
+      <main className={`main-sheet ${isAuthPage ? 'auth-sheet' : ''}`}>
         <Routes>
           <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<Login />} />
