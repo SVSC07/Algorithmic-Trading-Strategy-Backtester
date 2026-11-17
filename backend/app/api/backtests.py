@@ -13,7 +13,7 @@ from pydantic import BaseModel, model_validator
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_session, require_role
-from app.backtest_engine import BacktestEngine
+from app.services.backtest_engine import BacktestEngine
 from app.domain import ValidationError
 from app.models import User
 from app.repositories.backtest_run_repository import BacktestRunRepository
@@ -105,6 +105,18 @@ def compare_backtests(
     """GET /api/backtests/compare?runA=1&runB=2 — TRADER."""
     svc = _results_svc(session)
     return svc.compare_runs(current_user.user_id, runA, runB)
+
+
+@router.get("/{run_id}/trades", status_code=200)
+def get_backtest_trades(
+    run_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(_TRADER),
+):
+    """GET /api/backtests/{id}/trades — TRADER, own runs only."""
+    svc = _results_svc(session)
+    detail = svc.get_run_detail(current_user.user_id, run_id)
+    return detail.get("trades", [])
 
 
 @router.get("/{run_id}", status_code=200)

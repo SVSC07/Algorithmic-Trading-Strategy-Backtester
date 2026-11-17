@@ -122,6 +122,35 @@ def seeded_users(db_session: Session):
     return admin_token, trader_token, admin, trader
 
 
+@pytest.fixture(scope="function")
+def seed_users(db_session: Session):
+    admin = AppUser(
+        name="Admin",
+        email="admin@test.com",
+        password_hash=hash_password("adminpassword123"),
+        role="ADMIN",
+    )
+    trader = AppUser(
+        name="Trader",
+        email="trader@test.com",
+        password_hash=hash_password("traderpassword123"),
+        role="TRADER",
+    )
+    db_session.add(admin)
+    db_session.add(trader)
+    db_session.commit()
+
+    admin_token = create_token(admin.user_id, admin.role)
+    trader_token = create_token(trader.user_id, trader.role)
+
+    return {
+        "admin": admin,
+        "trader": trader,
+        "admin_token": admin_token,
+        "trader_token": trader_token,
+    }
+
+
 # Persistence fixtures
 @pytest.fixture
 def sample_user(db_session):

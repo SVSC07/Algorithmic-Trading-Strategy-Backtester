@@ -36,6 +36,9 @@ class InstrumentRepository:
     def find_by_id(self, instrument_id: int) -> Optional[Instrument]:
         return self._session.query(Instrument).filter_by(instrument_id=instrument_id).first()
 
+    def find_by_ticker(self, ticker: str) -> Optional[Instrument]:
+        return self._session.query(Instrument).filter(Instrument.ticker == ticker).first()
+
     def save_price_data(self, instrument_id: int, rows: List[dict]) -> int:
         """Insert rows, skip duplicates; return inserted count."""
         inserted = 0

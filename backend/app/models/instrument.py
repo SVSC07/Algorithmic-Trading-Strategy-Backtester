@@ -9,3 +9,6 @@ class Instrument(Base):
     ticker = Column(String, unique=True, nullable=False)
     name = Column(String, nullable=False)
     asset_class = Column(String, nullable=False)
+
+    def __getitem__(self, item: str):
+        return getattr(self, item)

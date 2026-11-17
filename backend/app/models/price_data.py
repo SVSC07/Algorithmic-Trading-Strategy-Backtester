@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, Float, Date, ForeignKey, UniqueConstrain
 from app.models.base import Base
 
 class PriceData(Base):
-    __tablename__ = "price_data"
+    __tablename__ = "app_price_data"
 
     price_id = Column(Integer, primary_key=True, autoincrement=True)
     instrument_id = Column(Integer, ForeignKey("instruments.instrument_id"), nullable=False)

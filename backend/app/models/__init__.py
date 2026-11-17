@@ -48,9 +48,12 @@ class Instrument(Base):
     name = Column(String, nullable=False)
     asset_class = Column(String, nullable=False)
 
+    def __getitem__(self, item: str):
+        return getattr(self, item)
+
 
 class PriceData(Base):
-    __tablename__ = "price_data"
+    __tablename__ = "app_price_data"
     price_id = Column(Integer, primary_key=True)
     instrument_id = Column(Integer, ForeignKey("instruments.instrument_id"), nullable=False)
     date = Column(Date, nullable=False)

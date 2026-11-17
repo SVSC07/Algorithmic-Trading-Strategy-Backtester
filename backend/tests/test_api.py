@@ -156,8 +156,29 @@ def test_backtest_execution_and_results_api(client, seed_users, db_session):
     assert res_trades.status_code == 200
     assert len(res_trades.json()) == 1
 
-    # 7. Compare endpoint
-    res_compare = client.get(f"/api/backtests/compare?runA={run_id}&runB={run_id}", headers=trader_h)
+    # 7. Compare endpoint with a second run
+    res_strat2 = client.post(
+        "/api/strategies",
+        headers=trader_h,
+        json={
+            "strategy_type": "MOVING_AVERAGE_CROSSOVER",
+            "parameters": {"short_window": 1, "long_window": 3},
+        },
+    )
+    strat_id2 = res_strat2.json()["strategy_id"]
+    res_bt2 = client.post(
+        "/api/backtests",
+        headers=trader_h,
+        json={
+            "strategy_id": strat_id2,
+            "instrument_id": inst.instrument_id,
+            "start_date": "2024-01-01",
+            "end_date": "2024-01-08",
+        },
+    )
+    run_id2 = res_bt2.json()["run_id"]
+
+    res_compare = client.get(f"/api/backtests/compare?runA={run_id}&runB={run_id2}", headers=trader_h)
     assert res_compare.status_code == 200
     compare_data = res_compare.json()
     assert "run_a" in compare_data

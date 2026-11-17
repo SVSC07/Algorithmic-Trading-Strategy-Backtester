@@ -225,7 +225,7 @@ class BacktestEngine:
 
     def _build_run_model(self, user_id: int, strategy_id: int, instrument_id: int, start_date: date, end_date: date, status: str):
         try:
-            from app.models.backtest_run import BacktestRun
+            from app.models import BacktestRun
             return BacktestRun(
                 user_id=user_id,
                 strategy_id=strategy_id,
